@@ -10,6 +10,8 @@ All user-facing text is Chinese; keep new UI strings in the same voice (terse, a
 
 ## Build Commands
 
+To run and drive the app in the simulator (tap, type, screenshot), use the `/run-swiftdecision` skill (`.claude/skills/run-swiftdecision/`) — it wraps the verified idb-based flow.
+
 There is no Package.swift; build through the Xcode project. The `build/` directory at repo root is derived data — never edit or read it.
 
 ```sh
