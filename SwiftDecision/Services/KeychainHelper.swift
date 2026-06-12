@@ -3,7 +3,7 @@ import Security
 
 enum KeychainHelper {
     private static let service = "com.miemieqiang.SwiftDecision"
-    private static let account = "anthropic-api-key"
+    private static let account = "llm-api-key"
 
     static func loadAPIKey() -> String? {
         let query: [String: Any] = [
