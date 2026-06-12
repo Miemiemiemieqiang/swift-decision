@@ -74,6 +74,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A100000000000000000000C2 /* Build configuration list for PBXNativeTarget "SwiftDecision" */;
 			buildPhases = (
+				E100000000000000000000B5 /* Check ASR Deps */,
 				A100000000000000000000B1 /* Sources */,
 				A100000000000000000000B2 /* Frameworks */,
 				A100000000000000000000B3 /* Resources */,
@@ -136,6 +137,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E100000000000000000000B5 /* Check ASR Deps */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileLists = (
+			);
+			inputPaths = (
+			);
+			name = "Check ASR Deps";
+			outputFileLists = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ ! -d \"$PROJECT_DIR/ThirdParty/sherpa-onnx.xcframework\" ] || [ ! -d \"$PROJECT_DIR/ThirdParty/onnxruntime.xcframework\" ] || [ ! -f \"$PROJECT_DIR/ThirdParty/asr-model/model.int8.onnx\" ]; then\n  echo \"error: 缺少语音识别依赖（ThirdParty/）。先在仓库根目录运行 ./Scripts/fetch_asr_deps.sh，再重新构建。\"\n  exit 1\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A100000000000000000000B1 /* Sources */ = {
