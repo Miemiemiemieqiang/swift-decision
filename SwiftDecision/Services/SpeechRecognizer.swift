@@ -62,6 +62,8 @@ final class SpeechRecognizer {
         transcript = ""
         queue.async { self.loadedRecognizer()?.reset() }
 
+        // 上一次 engine.start() 失败时 tap 会残留在 bus 上，重复 install 会直接 abort。
+        input.removeTap(onBus: 0)
         input.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in
             guard let self else { return }
             let samples = Self.resample(buffer, with: converter, to: targetFormat)
@@ -70,7 +72,13 @@ final class SpeechRecognizer {
         }
 
         engine.prepare()
-        try engine.start()
+        do {
+            try engine.start()
+        } catch {
+            input.removeTap(onBus: 0)
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            throw error
+        }
         isRecording = true
     }
 
