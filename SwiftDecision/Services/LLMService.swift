@@ -28,7 +28,7 @@ enum LLMError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notConfigured: return "还没有配置好模型服务，请先到设置里填入 Base URL、API Key 和模型名。"
+        case .notConfigured: return String(localized: "还没有配置好模型服务，请先到设置里填入 Base URL、API Key 和模型名。")
         case .badResponse(let message): return message
         }
     }
@@ -42,12 +42,13 @@ struct LLMService {
     {"verdict": "...", "reason": "...", "detail": "...", "trivial": false}
 
     字段规则：
-    1. verdict：不超过 8 个字的可执行动作（如「去」「不买」「选 A」「今晚就发」）。禁止「视情况而定」「都可以」这类骑墙表态。
-    2. reason：一句话（30 字以内）给出最关键的一条理由，不要罗列。
+    1. verdict：可执行的动作，中文不超过 8 个字，其他语言不超过 5 个词（如「去」「不买」「选 A」「Send it tonight」）。禁止「视情况而定」「都可以」这类骑墙表态。
+    2. reason：一句话（中文 30 字以内）给出最关键的一条理由，不要罗列。
     3. detail：2-4 句展开你的判断逻辑，供用户想看时再看。
     4. trivial：布尔值。如果这件事鸡毛蒜皮、怎么选结果都差不多，设为 true，verdict 直接替用户抛硬币（如「抛硬币：去」），reason 说明这事不值得纠结。
     5. 信息不足时不要追问，基于最合理的假设直接表态，假设写在 detail 里。
     6. 用户输入可能来自语音识别：没有标点，且可能有同音字、近音字错误（如「爬山」写成「怕山」）。先按读音和语义还原用户真正想问的事，再裁决；不要被错别字带偏，也不要在回答里提及错别字。
+    7. 语言：verdict、reason、detail 必须使用与用户提问相同的语言（用户用英文问就全部用英文答，用中文问就用中文答），不要混用。
     """
 
     func decide(_ question: String, anotherAngleFrom previous: Verdict? = nil) async throws -> Verdict {
@@ -78,17 +79,17 @@ struct LLMService {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw LLMError.badResponse("网络异常，请重试。")
+            throw LLMError.badResponse(String(localized: "网络异常，请重试。"))
         }
         guard http.statusCode == 200 else {
             let apiMessage = (try? JSONDecoder().decode(APIErrorEnvelope.self, from: data))?.error.message
-            throw LLMError.badResponse(apiMessage ?? "请求失败（HTTP \(http.statusCode)）")
+            throw LLMError.badResponse(apiMessage ?? String(localized: "请求失败（HTTP \(http.statusCode)）"))
         }
 
         let envelope = try JSONDecoder().decode(ChatCompletionEnvelope.self, from: data)
         guard let content = envelope.choices.first?.message.content,
               let jsonData = Self.extractJSON(from: content) else {
-            throw LLMError.badResponse("模型响应格式异常，请重试。")
+            throw LLMError.badResponse(String(localized: "模型响应格式异常，请重试。"))
         }
         return try JSONDecoder().decode(Verdict.self, from: jsonData)
     }

@@ -18,9 +18,9 @@ final class SpeechRecognizer {
         var errorDescription: String? {
             switch self {
             case .permissionDenied:
-                return "没有麦克风权限。去系统设置里打开，再按住说话。"
+                return String(localized: "没有麦克风权限。去系统设置里打开，再按住说话。")
             case .modelMissing:
-                return "语音模型没有打包进 App。先运行 Scripts/fetch_asr_deps.sh 再重新构建。"
+                return String(localized: "语音模型没有打包进 App。先运行 Scripts/fetch_asr_deps.sh 再重新构建。")
             }
         }
     }
