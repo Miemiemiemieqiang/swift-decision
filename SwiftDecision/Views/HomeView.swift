@@ -14,6 +14,11 @@ struct HomeView: View {
     @State private var errorMessage: String?
     @FocusState private var inputFocused: Bool
 
+    @State private var speech = SpeechRecognizer()
+    @State private var isHoldingMic = false
+    @State private var questionBeforeVoice = ""
+    @State private var voiceStartTask: Task<Void, Never>?
+
     private let service = LLMService()
 
     var body: some View {
@@ -33,19 +38,27 @@ struct HomeView: View {
                     .submitLabel(.go)
                     .onSubmit(submit)
 
-                Button(action: submit) {
-                    if isLoading {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Text("帮我定")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
+                HStack(spacing: 12) {
+                    Button(action: submit) {
+                        if isLoading {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Text("帮我定")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                        }
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(isLoading || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    micButton
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(isLoading || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Text(speech.isRecording ? "在听，松开就好" : "按住说话，松开上字")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
 
                 Spacer()
                 Spacer()
@@ -68,6 +81,11 @@ struct HomeView: View {
                     }
                 }
             }
+            .task { speech.prewarm() }
+            .onChange(of: speech.transcript) { _, text in
+                guard isHoldingMic || speech.isRecording else { return }
+                question = questionBeforeVoice + text
+            }
             .sheet(item: $pending) { item in
                 VerdictCardView(question: item.question, initialVerdict: item.verdict) {
                     question = ""
@@ -81,6 +99,47 @@ struct HomeView: View {
             } message: {
                 Text(errorMessage ?? "")
             }
+        }
+    }
+
+    private var micButton: some View {
+        Image(systemName: speech.isRecording ? "waveform" : "mic.fill")
+            .font(.title3)
+            .foregroundStyle(.white)
+            .frame(width: 50, height: 50)
+            .background(speech.isRecording ? Color.red : Color.accentColor, in: Circle())
+            .scaleEffect(isHoldingMic ? 1.15 : 1)
+            .animation(.snappy, value: isHoldingMic)
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in beginVoiceInput() }
+                    .onEnded { _ in endVoiceInput() }
+            )
+    }
+
+    private func beginVoiceInput() {
+        guard !isHoldingMic else { return }
+        isHoldingMic = true
+        inputFocused = false
+        questionBeforeVoice = question
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        voiceStartTask = Task {
+            do {
+                try await speech.start()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func endVoiceInput() {
+        guard isHoldingMic else { return }
+        isHoldingMic = false
+        Task {
+            // 等 start() 真正完成再停，避免快速点按时引擎停不下来。
+            await voiceStartTask?.value
+            let text = await speech.stop()
+            question = questionBeforeVoice + text
         }
     }
 

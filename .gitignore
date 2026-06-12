@@ -24,3 +24,6 @@ Carthage/Build/
 
 # macOS
 .DS_Store
+
+# Voice-input ASR deps, fetched by Scripts/fetch_asr_deps.sh
+ThirdParty/
