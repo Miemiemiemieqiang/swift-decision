@@ -25,50 +25,63 @@ struct VerdictCardView: View {
     }
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 20) {
-                Text(question)
-                    .font(.subheadline)
+        VStack(spacing: 20) {
+            Text(question)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .padding(.top, 32)
+
+            Spacer()
+
+            if current.trivial {
+                Label("这事不值得想", systemImage: "circle.dotted")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .padding(.top, 32)
+            }
 
-                Spacer()
+            Text(current.verdict)
+                .font(.system(size: 44, weight: .heavy, design: .rounded))
+                .multilineTextAlignment(.center)
+                .contentTransition(.opacity)
 
-                if current.trivial {
-                    Label("这事不值得想", systemImage: "circle.dotted")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            Text(current.reason)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
 
-                Text(current.verdict)
-                    .font(.system(size: 44, weight: .heavy, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .contentTransition(.opacity)
-
-                Text(current.reason)
-                    .font(.body)
+            DisclosureGroup("为什么这么判断") {
+                Text(current.detail)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+            }
+            .font(.callout)
+            .padding(.horizontal, 8)
+            .disabled(isSealed)
 
-                DisclosureGroup("为什么这么判断") {
-                    Text(current.detail)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 8)
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            Spacer()
+
+            // 封印后勾印接管按钮的位置，不盖住上面的判决文字。
+            if isSealed {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.green)
+                    Text("已定，不再想了")
+                        .font(.headline)
                 }
-                .font(.callout)
-                .padding(.horizontal, 8)
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
-                Spacer()
-
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 24)
+                .transition(.scale.combined(with: .opacity))
+            } else {
                 VStack(spacing: 12) {
                     Button(action: seal) {
                         Text("就这么定")
@@ -92,21 +105,10 @@ struct VerdictCardView: View {
                     .disabled(hasRetried || isRetrying)
                 }
                 .padding(.bottom, 24)
-            }
-            .padding(.horizontal, 28)
-            .disabled(isSealed)
-
-            if isSealed {
-                VStack(spacing: 12) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 72))
-                        .foregroundStyle(.green)
-                    Text("已定，不再想了")
-                        .font(.headline)
-                }
-                .transition(.scale.combined(with: .opacity))
+                .transition(.opacity)
             }
         }
+        .padding(.horizontal, 28)
         .interactiveDismissDisabled(isRetrying)
     }
 
@@ -120,6 +122,7 @@ struct VerdictCardView: View {
         )
         modelContext.insert(decision)
 
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         withAnimation(.spring(duration: 0.35)) {
             isSealed = true
         }
