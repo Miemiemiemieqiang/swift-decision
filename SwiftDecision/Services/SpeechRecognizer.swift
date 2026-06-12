@@ -1,7 +1,7 @@
 import AVFoundation
 import Observation
 
-/// 端侧流式中文语音识别，基于 sherpa-onnx。音频只在本机处理，不会上传。
+/// 端侧流式中英双语语音识别，基于 sherpa-onnx。音频只在本机处理，不会上传。
 ///
 /// 模型文件打包在 app bundle 的 `asr-model/` 目录里
 /// （由 Scripts/fetch_asr_deps.sh 下载到 ThirdParty/asr-model）。
@@ -97,7 +97,7 @@ final class SpeechRecognizer {
                     // 补一段静音把特征窗口里残留的尾音冲出来，再取最终结果。
                     recognizer.acceptWaveform(samples: [Float](repeating: 0, count: 8000))
                     while recognizer.isReady() { recognizer.decode() }
-                    text = recognizer.getResult().text
+                    text = Self.tidy(recognizer.getResult().text)
                     recognizer.reset()
                 }
                 DispatchQueue.main.async {
@@ -116,8 +116,10 @@ final class SpeechRecognizer {
         }
         let modelConfig = sherpaOnnxOnlineModelConfig(
             tokens: modelDir.appendingPathComponent("tokens.txt").path,
-            zipformer2Ctc: sherpaOnnxOnlineZipformer2CtcModelConfig(
-                model: modelDir.appendingPathComponent("model.int8.onnx").path),
+            transducer: sherpaOnnxOnlineTransducerModelConfig(
+                encoder: modelDir.appendingPathComponent("encoder.int8.onnx").path,
+                decoder: modelDir.appendingPathComponent("decoder.onnx").path,
+                joiner: modelDir.appendingPathComponent("joiner.int8.onnx").path),
             numThreads: 2
         )
         var config = sherpaOnnxOnlineRecognizerConfig(
@@ -139,8 +141,18 @@ final class SpeechRecognizer {
             decoded = true
         }
         guard decoded else { return }
-        let text = recognizer.getResult().text
+        let text = Self.tidy(recognizer.getResult().text)
         DispatchQueue.main.async { self.transcript = text }
+    }
+
+    /// 双语模型按 token 输出，中文字符之间会带空格；收掉它们，但保留英文单词间的空格。
+    private static func tidy(_ text: String) -> String {
+        let cjk = "[\\p{Han}，。？！、：；（）「」『』]"
+        return text
+            .replacingOccurrences(
+                of: "(?<=\(cjk))\\s+(?=\(cjk))", with: "", options: .regularExpression
+            )
+            .trimmingCharacters(in: .whitespaces)
     }
 
     private static func resample(
