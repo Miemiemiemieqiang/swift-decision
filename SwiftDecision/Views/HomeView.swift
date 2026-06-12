@@ -16,6 +16,7 @@ struct HomeView: View {
 
     @State private var speech = SpeechRecognizer()
     @State private var isHoldingMic = false
+    @State private var willCancelVoice = false
     @State private var questionBeforeVoice = ""
     @State private var voiceStartTask: Task<Void, Never>?
 
@@ -99,31 +100,62 @@ struct HomeView: View {
         }
     }
 
+    /// 上滑超过这个距离进入「松开取消」状态，松手即丢弃本次语音。
+    private static let voiceCancelDistance: CGFloat = 60
+
+    // 视觉状态全部跟随 isHoldingMic（按下瞬间生效），不等引擎真正启动，
+    // 否则权限检查 + 激活音频会话 + 起引擎的几百毫秒会让按下显得「顿一下」。
     private var micBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: speech.isRecording ? "waveform" : "mic.fill")
-            Text(speech.isRecording ? "在听，松开就好" : "按住说话，松开上字")
+        VStack(spacing: 10) {
+            if isHoldingMic {
+                Text(willCancelVoice ? "松开手指，取消这次输入" : "上滑取消")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .transition(.opacity)
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: micBarIcon)
+                Text(micBarTitle)
+            }
+            .font(.headline)
+            .foregroundStyle(isHoldingMic ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(micBarBackground, in: Capsule())
+            .scaleEffect(isHoldingMic && !willCancelVoice ? 1.03 : 1)
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        beginVoiceInput()
+                        setWillCancelVoice(value.translation.height < -Self.voiceCancelDistance)
+                    }
+                    .onEnded { _ in endVoiceInput() }
+            )
         }
-        .font(.headline)
-        .foregroundStyle(speech.isRecording ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
-        .frame(maxWidth: .infinity)
-        .frame(height: 56)
-        .background(
-            speech.isRecording ? AnyShapeStyle(Color.red) : AnyShapeStyle(.thinMaterial),
-            in: Capsule()
-        )
-        .scaleEffect(isHoldingMic ? 1.03 : 1)
         .animation(.snappy, value: isHoldingMic)
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in beginVoiceInput() }
-                .onEnded { _ in endVoiceInput() }
-        )
+        .animation(.snappy, value: willCancelVoice)
+    }
+
+    private var micBarIcon: String {
+        guard isHoldingMic else { return "mic.fill" }
+        return willCancelVoice ? "xmark" : "waveform"
+    }
+
+    private var micBarTitle: LocalizedStringKey {
+        guard isHoldingMic else { return "按住说话，松开上字" }
+        return willCancelVoice ? "松开取消" : "在听，松开就好"
+    }
+
+    private var micBarBackground: AnyShapeStyle {
+        guard isHoldingMic else { return AnyShapeStyle(.thinMaterial) }
+        return willCancelVoice ? AnyShapeStyle(Color(.systemGray2)) : AnyShapeStyle(Color.red)
     }
 
     private func beginVoiceInput() {
         guard !isHoldingMic else { return }
         isHoldingMic = true
+        willCancelVoice = false
         inputFocused = false
         questionBeforeVoice = question
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -132,18 +164,35 @@ struct HomeView: View {
                 try await speech.start()
             } catch {
                 errorMessage = error.localizedDescription
+                // 启动失败时把条退回空闲态，不再等用户松手。
+                isHoldingMic = false
+                willCancelVoice = false
             }
         }
+    }
+
+    private func setWillCancelVoice(_ cancelling: Bool) {
+        guard isHoldingMic, willCancelVoice != cancelling else { return }
+        willCancelVoice = cancelling
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
     }
 
     private func endVoiceInput() {
         guard isHoldingMic else { return }
         isHoldingMic = false
+        let cancelled = willCancelVoice
+        willCancelVoice = false
         Task {
             // 等 start() 真正完成再停，避免快速点按时引擎停不下来。
             await voiceStartTask?.value
             let text = await speech.stop()
-            question = questionBeforeVoice + text
+            if cancelled {
+                question = questionBeforeVoice
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            } else {
+                question = questionBeforeVoice + text
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
         }
     }
 
