@@ -57,6 +57,8 @@ struct HomeView: View {
                 Spacer()
             }
             .padding(.horizontal, 24)
+            .contentShape(Rectangle())
+            .onTapGesture { inputFocused = false }
             .safeAreaInset(edge: .bottom) {
                 micBar
                     .padding(.horizontal, 24)
