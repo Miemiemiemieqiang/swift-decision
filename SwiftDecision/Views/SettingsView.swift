@@ -1,10 +1,14 @@
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var decisions: [Decision]
     @State private var baseURL: String = LLMConfig.baseURL
     @State private var apiKey: String = KeychainHelper.loadAPIKey() ?? ""
     @State private var model: String = LLMConfig.model
     @State private var saved = false
+    @State private var confirmingClear = false
 
     private var canSave: Bool {
         !baseURL.trimmingCharacters(in: .whitespaces).isEmpty
@@ -53,6 +57,26 @@ struct SettingsView: View {
                 .disabled(!canSave)
             } footer: {
                 Text("API Key 保存在本机钥匙串里，所有请求从手机直连你配置的服务，不经过任何中间服务器。")
+            }
+
+            Section {
+                Button("清空已定记录", role: .destructive) {
+                    confirmingClear = true
+                }
+                .disabled(decisions.isEmpty)
+                .confirmationDialog(
+                    "清空全部 \(decisions.count) 条记录？",
+                    isPresented: $confirmingClear,
+                    titleVisibility: .visible
+                ) {
+                    Button("清空，不留痕迹", role: .destructive) {
+                        try? modelContext.delete(model: Decision.self)
+                    }
+                } message: {
+                    Text("删了就找不回来了。")
+                }
+            } footer: {
+                Text("删掉所有定下来的事，不可恢复。")
             }
         }
         .navigationTitle("设置")

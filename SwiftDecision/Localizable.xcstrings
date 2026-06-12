@@ -112,6 +112,54 @@
         }
       }
     },
+    "删了就找不回来了。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once it's gone, it's gone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删了就找不回来了。"
+          }
+        }
+      }
+    },
+    "删掉所有定下来的事，不可恢复。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletes every sealed decision. This cannot be undone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删掉所有定下来的事，不可恢复。"
+          }
+        }
+      }
+    },
+    "删除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
+        }
+      }
+    },
     "在听，松开就好" : {
       "localizations" : {
         "en" : {
@@ -396,6 +444,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有麦克风权限。去系统设置里打开，再按住说话。"
+          }
+        }
+      }
+    },
+    "清空，不留痕迹" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear it all, no trace"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空，不留痕迹"
+          }
+        }
+      }
+    },
+    "清空全部 %lld 条记录？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear all %lld decisions?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空全部 %lld 条记录？"
+          }
+        }
+      }
+    },
+    "清空已定记录" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Decided History"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空已定记录"
           }
         }
       }

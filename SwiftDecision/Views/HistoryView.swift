@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct HistoryView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Decision.createdAt, order: .reverse) private var decisions: [Decision]
 
     var body: some View {
@@ -13,9 +14,21 @@ struct HistoryView: View {
                     description: Text("定下来的事会记在这里，只回看，不重新纠结。")
                 )
             } else {
-                List(decisions) { decision in
-                    DecisionRow(decision: decision)
+                List {
+                    ForEach(decisions) { decision in
+                        Section {
+                            DecisionRow(decision: decision)
+                                .swipeActions(edge: .trailing) {
+                                    Button("删除", systemImage: "trash", role: .destructive) {
+                                        withAnimation {
+                                            modelContext.delete(decision)
+                                        }
+                                    }
+                                }
+                        }
+                    }
                 }
+                .listSectionSpacing(12)
             }
         }
         .navigationTitle("已定")
