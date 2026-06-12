@@ -38,32 +38,29 @@ struct HomeView: View {
                     .submitLabel(.go)
                     .onSubmit(submit)
 
-                HStack(spacing: 12) {
-                    Button(action: submit) {
-                        if isLoading {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            Text("帮我定")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                        }
+                Button(action: submit) {
+                    if isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Text("帮我定")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(isLoading || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                    micButton
                 }
-
-                Text(speech.isRecording ? "在听，松开就好" : "按住说话，松开上字")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(isLoading || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                 Spacer()
                 Spacer()
             }
             .padding(.horizontal, 24)
+            .safeAreaInset(edge: .bottom) {
+                micBar
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 8)
+            }
             .navigationTitle("快定")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -102,19 +99,26 @@ struct HomeView: View {
         }
     }
 
-    private var micButton: some View {
-        Image(systemName: speech.isRecording ? "waveform" : "mic.fill")
-            .font(.title3)
-            .foregroundStyle(.white)
-            .frame(width: 50, height: 50)
-            .background(speech.isRecording ? Color.red : Color.accentColor, in: Circle())
-            .scaleEffect(isHoldingMic ? 1.15 : 1)
-            .animation(.snappy, value: isHoldingMic)
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in beginVoiceInput() }
-                    .onEnded { _ in endVoiceInput() }
-            )
+    private var micBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: speech.isRecording ? "waveform" : "mic.fill")
+            Text(speech.isRecording ? "在听，松开就好" : "按住说话，松开上字")
+        }
+        .font(.headline)
+        .foregroundStyle(speech.isRecording ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+        .frame(maxWidth: .infinity)
+        .frame(height: 56)
+        .background(
+            speech.isRecording ? AnyShapeStyle(Color.red) : AnyShapeStyle(.thinMaterial),
+            in: Capsule()
+        )
+        .scaleEffect(isHoldingMic ? 1.03 : 1)
+        .animation(.snappy, value: isHoldingMic)
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in beginVoiceInput() }
+                .onEnded { _ in endVoiceInput() }
+        )
     }
 
     private func beginVoiceInput() {
