@@ -47,6 +47,7 @@ struct LLMService {
     3. detail：2-4 句展开你的判断逻辑，供用户想看时再看。
     4. trivial：布尔值。如果这件事鸡毛蒜皮、怎么选结果都差不多，设为 true，verdict 直接替用户抛硬币（如「抛硬币：去」），reason 说明这事不值得纠结。
     5. 信息不足时不要追问，基于最合理的假设直接表态，假设写在 detail 里。
+    6. 用户输入可能来自语音识别：没有标点，且可能有同音字、近音字错误（如「爬山」写成「怕山」）。先按读音和语义还原用户真正想问的事，再裁决；不要被错别字带偏，也不要在回答里提及错别字。
     """
 
     func decide(_ question: String, anotherAngleFrom previous: Verdict? = nil) async throws -> Verdict {
