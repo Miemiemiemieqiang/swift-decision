@@ -22,7 +22,7 @@ struct SettingsView: View {
             } header: {
                 Text("Base URL")
             } footer: {
-                Text("任意 OpenAI 兼容服务的地址，填到 /v1 这一级，例如 https://api.deepseek.com/v1。")
+                Text("任意 OpenAI 兼容服务的地址，填到 /v1 这一级，例如 https://api.openai.com/v1。")
             }
 
             Section("API Key") {
